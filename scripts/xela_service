@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """XELA Sensors Service node"""
+
 import subprocess
 import os
 import sys
@@ -181,7 +182,14 @@ class ArgMgr(object):
         raw (dict): The raw parsed command-line arguments.
     """
 
-    def __init__(self, fstring=None, logfile="log.log", col="200:200:255", version=None, appname=None):
+    def __init__(
+        self,
+        fstring=None,
+        logfile="log.log",
+        col="200:200:255",
+        version=None,
+        appname=None,
+    ):
         app = appname if appname else "xela"
         ver = version if version else __version__
         arglist = []
@@ -232,27 +240,55 @@ class ArgMgr(object):
         arglist.extend(lta)
         sys.stderr.write("arguments OUT: {}\n".format(arglist))
         color = "\033[38:2:{}m".format(col)
-        ARGM = argparse.ArgumentParser(prog=app, formatter_class=argparse.RawTextHelpFormatter, add_help=False)
+        ARGM = argparse.ArgumentParser(
+            prog=app, formatter_class=argparse.RawTextHelpFormatter, add_help=False
+        )
 
         if fstring:
             if "p" in fstring:
-                ARGM.add_argument('-p', '--port', default=5000, type=int, help=f"{color}Server port\033[0m")
+                ARGM.add_argument(
+                    "-p",
+                    "--port",
+                    default=5000,
+                    type=int,
+                    help=f"{color}Server port\033[0m",
+                )
             if "a" in fstring and not "q" in fstring:
-                ARGM.add_argument('-d', '--debug_level', default=0, choices=range(4), type=int,
-                                  help="{}Debug Level (0-3) (default: 0)\033[0m".format(color))
+                ARGM.add_argument(
+                    "-d",
+                    "--debug_level",
+                    default=0,
+                    choices=range(4),
+                    type=int,
+                    help="{}Debug Level (0-3) (default: 0)\033[0m".format(color),
+                )
             if "i" in fstring:
-                ARGM.add_argument('-i', '--ip', default="127.0.0.1", help=f"{color}Server IP\033[0m")
-            ARGM.add_argument('--debug', action="store_true", help=argparse.SUPPRESS)
-            ARGM.add_argument('--roslog', help=argparse.SUPPRESS)
-            ARGM.add_argument('--rosname', help=argparse.SUPPRESS)
+                ARGM.add_argument(
+                    "-i", "--ip", default="127.0.0.1", help=f"{color}Server IP\033[0m"
+                )
+            ARGM.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
+            ARGM.add_argument("--roslog", help=argparse.SUPPRESS)
+            ARGM.add_argument("--rosname", help=argparse.SUPPRESS)
 
         else:
-            ARGM.add_argument("args", help="\033[31mPlease call ArgMgr with fstring.\033[0m")
+            ARGM.add_argument(
+                "args", help="\033[31mPlease call ArgMgr with fstring.\033[0m"
+            )
 
-        ARGM.add_argument('-v', '--version', action='version', version='{} {}'.format(app, ver),
-                          help="{}Show program's version number and exit.\033[0m".format(color))
-        ARGM.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
-                          help='{}Show this help message and exit.\033[0m'.format(color))
+        ARGM.add_argument(
+            "-v",
+            "--version",
+            action="version",
+            version="{} {}".format(app, ver),
+            help="{}Show program's version number and exit.\033[0m".format(color),
+        )
+        ARGM.add_argument(
+            "-h",
+            "--help",
+            action="help",
+            default=argparse.SUPPRESS,
+            help="{}Show this help message and exit.\033[0m".format(color),
+        )
 
         if not fstring:
             ARGS = vars(ARGM.parse_args(["-h"]))
@@ -272,6 +308,7 @@ class ArgMgr(object):
             self.ch.set_attr(i, ARGS[i])
         try:
             import distro
+
             a, b, c = distro.id(), distro.version(), distro.codename()
             if " " in a:
                 t = a.split(" ")
@@ -307,7 +344,9 @@ class ArgMgr(object):
         """
         self._msg.print(
             "Startup:\n\t\tConf:\t\033[32m{}\033[0m\n\t\tAddr:\t\033[32m{}\033[0m\n\t\tPort:\t\033[32m{}\033[0m\n".format(
-                self.ch.file, self.ch.ip, self.ch.port))
+                self.ch.file, self.ch.ip, self.ch.port
+            )
+        )
 
 
 def tup(com):
@@ -321,8 +360,13 @@ ROS_DISTRO = f"{tup(ROS_D)}".replace("\n", "")
 ROS_VERSION = f"{tup(ROS_V)}".replace("\n", "")
 ROS_RELEASE = f"ROS {ROS_DISTRO.capitalize()} {ROS_VERSION}"
 IAM = os.getpid()
-ARG_HOL = ArgMgr(fstring="pia", logfile="xt.log", col="200:200:255", version=__version__,
-                 appname="xela_service")  # pylint: disable = undefined-variable
+ARG_HOL = ArgMgr(
+    fstring="pia",
+    logfile="xt.log",
+    col="200:200:255",
+    version=__version__,
+    appname="xela_service",
+)  # pylint: disable = undefined-variable
 
 
 def error_reporter(err, frame=0, mtype="error"):
@@ -378,9 +422,13 @@ class ServiceNode(object):
 
     def setup_services(self):
         """Set up ROS services."""
-        self.srv.append(rospy.Service('xServStream', XelaSensorStream, self.service_data_stream_callback))
+        self.srv.append(
+            rospy.Service(
+                "xServStream", XelaSensorStream, self.service_data_stream_callback
+            )
+        )
         # self.srv.append(rospy.Publisher('xServTopic', SensStream, queue_size=10))
-        self.publisher_ = rospy.Publisher('xServTopic', SensStream, queue_size=10)
+        self.publisher_ = rospy.Publisher("xServTopic", SensStream, queue_size=10)
 
     def service_data_stream_callback(self, request):
         """
@@ -393,7 +441,7 @@ class ServiceNode(object):
         Returns:
             XelaSensorStream.Response: The response message containing sensor data.
         """
-        
+
         if request.sensor == 0:
             if self.data:
                 data = [self.data[x] for x in self.data.keys()]
@@ -413,7 +461,7 @@ class ServiceNode(object):
         self.data = data
         # obj = XelaSensorStreamResponse(list(self.data))
         resp = [self.data[x] for x in self.data.keys()]
-        
+
         try:
             self.publisher_.publish(resp)
         except Exception as e:
@@ -424,6 +472,7 @@ class ServiceNode(object):
         """Reset the node by clearing all stored data"""
         self.data = {}
         rospy.logwarn("Node reset")
+
 
 loop = asyncio.get_event_loop()
 
@@ -447,20 +496,29 @@ def message_parser(msg_obj, msg_no: int = 0):
     values = []
     forces = []
     taxels = msg_obj.get("taxels", -1)
-    data_val = msg_obj.get("data", "").split(",")
+    data_raw = msg_obj.get("data", "")
+    # Handle both list and comma-separated string formats (version compatibility)
+    if isinstance(data_raw, list):
+        data_val = data_raw
+    else:
+        data_val = data_raw.split(",") if data_raw else []
     if len(data_val) != 3 * taxels:
         error(f"Taxel count mismatch: {taxels} != {int(len(data_val) / 3)}")
         return None
     for val in data_val:
         try:
-            values.append(int(val, 16))
-        except ValueError:
-            error(f"Value `{val}` is not a valid HEX number")
+            # Handle both integer (new format) and hex string (old format)
+            if isinstance(val, int):
+                values.append(val)
+            else:
+                values.append(int(val, 16))
+        except (ValueError, TypeError) as e:
+            error(f"Value `{val}` conversion error: {e}")
             break
     taxels_val = []
     for i in range(0, len(values), 3):
         taxels_val.append(Taxel())
-        taxels_val[-1].x, taxels_val[-1].y, taxels_val[-1].z = values[i:i + 3]
+        taxels_val[-1].x, taxels_val[-1].y, taxels_val[-1].z = values[i : i + 3]
     sensor.taxels = taxels_val
     force_vals = msg_obj.get("calibrated", None)
     if force_vals is None:
@@ -516,7 +574,7 @@ def on_message(wsapp, message):
                 data_container = {}
                 for key in elements:
                     try:
-                        resp = message_parser(data[key], data['message'])
+                        resp = message_parser(data[key], data["message"])
                         if resp is None:
                             continue
                         pos, returned_data = resp
@@ -545,10 +603,10 @@ def get_ip(setIP=None):
         socket = importlib.import_module("socket")
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
-            s.connect(('1.2.3.4', 1))
+            s.connect(("1.2.3.4", 1))
             IP = s.getsockname()
         except Exception:
-            IP = ['127.0.0.1']
+            IP = ["127.0.0.1"]
         finally:
             s.close()
     else:
@@ -645,10 +703,12 @@ def start_server():
     sys.stderr.write("\033[31mws://{}:{}\033[0m\n".format(ip, CONFIG.port))
     while ME_ONLINE:
         try:
-            wsapp = websocket.WebSocketApp("ws://{}:{}".format(ip, CONFIG.port),
-                                           on_message=on_message,
-                                           on_close=on_close,
-                                           on_error=on_error)  # set up WebSockets
+            wsapp = websocket.WebSocketApp(
+                "ws://{}:{}".format(ip, CONFIG.port),
+                on_message=on_message,
+                on_close=on_close,
+                on_error=on_error,
+            )  # set up WebSockets
             wsapp.run_forever()  # Run until connection dies
         except KeyboardInterrupt:
             ME_ONLINE.set(False)
