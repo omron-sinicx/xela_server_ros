@@ -19,15 +19,18 @@
 
 ```
 xela_server_ros/
-├── bin/                    # AppImage展開後のバイナリ（.gitignore）
-│   ├── AppRun              # メインエントリポイント
-│   └── usr/bin/xela_server # 実行バイナリ本体
-├── config/                 # 設定ファイル（.gitignore）
-│   └── xServ.ini           # センサー設定
-├── tools/                  # ユーティリティツール（.gitignore）
-│   ├── xela_conf           # 設定ツール
-│   ├── xela_log            # ログツール
-│   └── xela_viz            # ビジュアライザ
+├── software/               # XELA ソフトウェア（.gitignore）
+│   └── v1.7.7/             # バージョンディレクトリ
+│       ├── server/         # xela_server展開後のファイル
+│       │   └── AppRun      # メインエントリポイント
+│       ├── conf/           # xela_conf展開後のファイル
+│       │   └── AppRun
+│       ├── log/            # xela_log展開後のファイル
+│       │   └── AppRun
+│       ├── viz/            # xela_viz展開後のファイル
+│       │   └── AppRun
+│       └── config/         # 設定ファイル
+│           └── xServ.ini   # センサー設定
 ├── scripts/
 │   ├── xela_server         # ROSノード用ラッパースクリプト（bash）
 │   ├── xela_service        # ROSサービス/トピックノード（Python）
@@ -37,12 +40,12 @@ xela_server_ros/
 ├── msg/                    # ROSメッセージ定義
 ├── srv/                    # ROSサービス定義
 ├── notes/                  # ドキュメント
-└── .gitignore              # bin/, config/, tools/ を無視
+└── .gitignore              # software/ を無視
 ```
 
 ### 重要なポイント
 
-- `bin/`, `config/`, `tools/` は `.gitignore` で無視されている（環境依存のため）
+- `software/` は `.gitignore` で無視されている（環境依存のため）
 - AppImageは Docker 内で FUSE が使えないため、展開して使用する必要がある
 
 ---
@@ -64,22 +67,24 @@ xela_server_ros/
 3. ファイルを配置:
 
    ```bash
-   # bin/ ディレクトリにコピー
-   mv squashfs-root bin
+   # software/v1.7.7/server/ ディレクトリに配置
+   mkdir -p software/v1.7.7/server
+   mv squashfs-root/* software/v1.7.7/server/
 
    # config/ に設定ファイルを配置
-   mkdir -p config
-   cp bin/xServ.ini config/
+   mkdir -p software/v1.7.7/config
+   cp software/v1.7.7/server/etc/xela/xServ.ini software/v1.7.7/config/
 
-   # tools/ にユーティリティを配置
-   mkdir -p tools
-   mv bin/xela_conf bin/xela_log bin/xela_viz tools/
+   # ツールの展開と配置
+   ./xela_conf --appimage-extract && mv squashfs-root software/v1.7.7/conf
+   ./xela_log --appimage-extract && mv squashfs-root software/v1.7.7/log
+   ./xela_viz --appimage-extract && mv squashfs-root software/v1.7.7/viz
    ```
 
 4. 実行確認:
 
    ```bash
-   ./bin/AppRun --help
+   ./software/v1.7.7/server/AppRun --help
    ```
 
 ---
@@ -220,7 +225,7 @@ roslaunch xela_server_ros service.launch
 
 ```bash
 cd ~/osx-ur/catkin_ws/src/xela_server_ros
-./bin/AppRun -f config/xServ.ini --port 5000 --ip 192.168.0.21
+./software/v1.7.7/server/AppRun -f software/v1.7.7/config/xServ.ini --port 5000 --ip 192.168.0.21
 ```
 
 **ターミナル2 - ROSノード:**
@@ -372,8 +377,8 @@ Docker内ではFUSEが使えないため、AppImageを展開して使用する:
 
 ```bash
 ./xela_server.AppImage --appimage-extract
-mv squashfs-root bin
-./bin/AppRun -f config/xServ.ini
+mv squashfs-root software/v1.7.7/server
+./software/v1.7.7/server/AppRun -f software/v1.7.7/config/xServ.ini
 ```
 
 ---
@@ -396,4 +401,4 @@ mv squashfs-root bin
 
 ---
 
-*最終更新: 2026-01-13*
+*最終更新: 2026-01-14*

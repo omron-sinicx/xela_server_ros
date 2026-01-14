@@ -1,0 +1,30 @@
+# XELA Software Directory
+# Ignore all contents except .gitkeep files and directory structure
+
+# Ignore files in server/ (but not the directory or .gitkeep)
+v1.7.7/server/**
+!v1.7.7/server/
+!v1.7.7/server/.gitkeep
+
+# Ignore files in conf/
+v1.7.7/conf/**
+!v1.7.7/conf/
+!v1.7.7/conf/.gitkeep
+
+# Ignore files in log/
+v1.7.7/log/**
+!v1.7.7/log/
+!v1.7.7/log/.gitkeep
+
+# Ignore files in viz/
+v1.7.7/viz/**
+!v1.7.7/viz/
+!v1.7.7/viz/.gitkeep
+
+# Ignore files in config/
+v1.7.7/config/**
+!v1.7.7/config/
+!v1.7.7/config/.gitkeep
+
+# Ignore manuals/PDFs
+*.pdf

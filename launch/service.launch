@@ -1,5 +1,5 @@
 <launch>
-    <arg name="file" default="$(find xela_server_ros)/config/xServ.ini"/>
+    <arg name="file" default="$(find xela_server_ros)/software/v1.7.7/config/xServ.ini"/>
     <arg name="port" default="5000"/>
     <arg name="ip" default="127.0.0.1"/>
     <arg name="d" default="0"/>

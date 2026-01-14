@@ -7,7 +7,7 @@
 ## 設定ファイルの場所
 
 ```
-xela_server_ros/config/xServ.ini
+xela_server_ros/software/v1.7.7/config/xServ.ini
 ```
 
 この場所は `.gitignore` で無視されているため、各環境で個別に設定が必要です。
