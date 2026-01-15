@@ -1,27 +1,5 @@
 # XELA Software Directory
-# Ignore all contents except .gitkeep files and directory structure
-
-# Ignore files in bin/server/ (but not the directory or .gitkeep)
-v1.7.7/bin/server/**
-!v1.7.7/bin/server/
-!v1.7.7/bin/server/.gitkeep
-
-# Ignore files in bin/conf/
-v1.7.7/bin/conf/**
-!v1.7.7/bin/conf/
-!v1.7.7/bin/conf/.gitkeep
-
-# Ignore files in bin/log/
-v1.7.7/bin/log/**
-!v1.7.7/bin/log/
-!v1.7.7/bin/log/.gitkeep
-
-# Ignore files in bin/viz/
-v1.7.7/bin/viz/**
-!v1.7.7/bin/viz/
-!v1.7.7/bin/viz/.gitkeep
-
-# config/ directory is tracked (not ignored)
+# Common ignore rules
 
 # Ignore manuals/PDFs
 *.pdf
