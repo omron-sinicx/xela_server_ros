@@ -1,0 +1,14 @@
+apt:
+  sources:
+  - deb http://jp.archive.ubuntu.com/ubuntu/ jammy main restricted
+  - deb http://jp.archive.ubuntu.com/ubuntu/ jammy universe
+  - deb http://jp.archive.ubuntu.com/ubuntu/ jammy multiverse
+  - deb http://archive.canonical.com/ubuntu jammy partner
+  - deb http://security.ubuntu.com/ubuntu jammy-security main restricted
+  - deb http://security.ubuntu.com/ubuntu jammy-security universe
+  - deb http://security.ubuntu.com/ubuntu jammy-security multiverse
+  packages:
+  - libc6:amd64=2.35-0ubuntu3.10
+  - libgcc-s1:amd64=12.3.0-1ubuntu1~22.04
+  - gcc-12-base:amd64=12.3.0-1ubuntu1~22.04
+  - libcrypt1:amd64=1:4.4.27-1
