@@ -21,10 +21,7 @@ v1.7.7/bin/viz/**
 !v1.7.7/bin/viz/
 !v1.7.7/bin/viz/.gitkeep
 
-# Ignore files in config/
-v1.7.7/config/**
-!v1.7.7/config/
-!v1.7.7/config/.gitkeep
+# config/ directory is tracked (not ignored)
 
 # Ignore manuals/PDFs
 *.pdf
