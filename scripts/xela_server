@@ -34,7 +34,7 @@ printf "\n"
 filtered_params=("${params[@]}")
 
 # Print the command (for debugging purposes)
-XELA_PATH="$(rospack find xela_server_ros)/software/v1.7.7/server/AppRun"
+XELA_PATH="$(rospack find xela_server_ros)/software/v1.8.0/bin/server/AppRun"
 echo "Running command: $XELA_PATH ${params[@]}"
 
 # Execute the command
