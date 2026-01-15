@@ -4,3 +4,9 @@ xela_log
 xela_viz
 xela_xtc
 xela_server
+
+# Ignore extracted binaries in bin/server/
+bin/server/**
+!bin/server/
+!bin/server/.gitkeep
+!bin/server/.gitignore
