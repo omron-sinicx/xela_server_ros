@@ -1,0 +1,6 @@
+# Ignore AppImage files
+xela_conf
+xela_log
+xela_viz
+xela_xtc
+xela_server
