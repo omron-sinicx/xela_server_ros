@@ -18,8 +18,16 @@ import rospy
 import argparse
 import importlib
 
-from xela_server_ros.msg import SensStream, SensorFull, Taxel, Forces
+from xela_server_ros.msg import (
+    SensStream,
+    SensorFull,
+    Taxel,
+    Forces,
+    ClusterPoint,
+    SensorClusters,
+)
 from xela_server_ros.srv import XelaSensorStream, XelaSensorStreamResponse
+from std_msgs.msg import Header
 
 __version__ = "1.7.6_137302"
 logging.basicConfig(level=logging.INFO)
@@ -429,6 +437,9 @@ class ServiceNode(object):
         )
         # self.srv.append(rospy.Publisher('xServTopic', SensStream, queue_size=10))
         self.publisher_ = rospy.Publisher("xServTopic", SensStream, queue_size=10)
+        self.cluster_publisher_ = rospy.Publisher(
+            "xServClusters", SensorClusters, queue_size=10
+        )
 
     def service_data_stream_callback(self, request):
         """
@@ -467,6 +478,33 @@ class ServiceNode(object):
         except Exception as e:
             warn(f"Publisher: {e2t(e)}")
             info(f"Traceback: {traceback.format_exception(e)}")
+
+    def publish_clusters(self, sensor_id, extradots):
+        """
+        Publish clustering data for a sensor.
+
+        Args:
+            sensor_id (int): The sensor ID.
+            extradots (list): List of cluster points [[x, y, force], ...].
+        """
+        if not extradots:
+            return
+        msg = SensorClusters()
+        msg.header = Header()
+        msg.header.stamp = rospy.Time.now()
+        msg.sensor_id = sensor_id
+        msg.clusters = []
+        for cluster in extradots:
+            if len(cluster) >= 3:
+                point = ClusterPoint()
+                point.x = float(cluster[0])
+                point.y = float(cluster[1])
+                point.force = float(cluster[2])
+                msg.clusters.append(point)
+        try:
+            self.cluster_publisher_.publish(msg)
+        except Exception as e:
+            warn(f"Cluster Publisher: {e2t(e)}")
 
     def reset(self):
         """Reset the node by clearing all stored data"""
@@ -584,6 +622,16 @@ def on_message(wsapp, message):
                         traceback.print_exception(e)
                         pass
                 node.publish(data_container)
+                # Publish cluster data if available
+                for key in elements:
+                    sensor_data = data.get(key, {})
+                    extradots = sensor_data.get("extradots", [])
+                    if extradots:
+                        try:
+                            sensor_id = int(key)
+                            node.publish_clusters(sensor_id, extradots)
+                        except (ValueError, TypeError):
+                            pass
         except Exception as e:
             warn(f"Message parsing failed: {e2t(e)}")
             pass  # ignore message as it's probably invalid

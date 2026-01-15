@@ -67,24 +67,24 @@ xela_server_ros/
 3. ファイルを配置:
 
    ```bash
-   # software/v1.7.7/server/ ディレクトリに配置
-   mkdir -p software/v1.7.7/server
-   mv squashfs-root/* software/v1.7.7/server/
+   # software/v1.7.7/bin/server/ ディレクトリに配置
+   mkdir -p software/v1.7.7/bin/server
+   mv squashfs-root/* software/v1.7.7/bin/server/
 
    # config/ に設定ファイルを配置
    mkdir -p software/v1.7.7/config
-   cp software/v1.7.7/server/etc/xela/xServ.ini software/v1.7.7/config/
+   cp software/v1.7.7/bin/server/etc/xela/xServ.ini software/v1.7.7/config/
 
    # ツールの展開と配置
-   ./xela_conf --appimage-extract && mv squashfs-root software/v1.7.7/conf
-   ./xela_log --appimage-extract && mv squashfs-root software/v1.7.7/log
-   ./xela_viz --appimage-extract && mv squashfs-root software/v1.7.7/viz
+   ./xela_conf --appimage-extract && mv squashfs-root software/v1.7.7/bin/conf
+   ./xela_log --appimage-extract && mv squashfs-root software/v1.7.7/bin/log
+   ./xela_viz --appimage-extract && mv squashfs-root software/v1.7.7/bin/viz
    ```
 
 4. 実行確認:
 
    ```bash
-   ./software/v1.7.7/server/AppRun --help
+   ./software/v1.7.7/bin/server/AppRun --help
    ```
 
 ---
@@ -225,7 +225,7 @@ roslaunch xela_server_ros service.launch
 
 ```bash
 cd ~/osx-ur/catkin_ws/src/xela_server_ros
-./software/v1.7.7/server/AppRun -f software/v1.7.7/config/xServ.ini --port 5000 --ip 192.168.0.21
+./software/v1.7.7/bin/server/AppRun -f software/v1.7.7/config/xServ.ini --port 5000 --ip 192.168.0.21
 ```
 
 **ターミナル2 - ROSノード:**
@@ -377,8 +377,8 @@ Docker内ではFUSEが使えないため、AppImageを展開して使用する:
 
 ```bash
 ./xela_server.AppImage --appimage-extract
-mv squashfs-root software/v1.7.7/server
-./software/v1.7.7/server/AppRun -f software/v1.7.7/config/xServ.ini
+mv squashfs-root software/v1.7.7/bin/server
+./software/v1.7.7/bin/server/AppRun -f software/v1.7.7/config/xServ.ini
 ```
 
 ---

@@ -17,6 +17,8 @@ add_message_files(
   "SensStream.msg"
   "Taxel.msg"
   "Forces.msg"
+  "ClusterPoint.msg"
+  "SensorClusters.msg"
 )
 
 add_service_files(
