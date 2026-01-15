@@ -2,3 +2,10 @@ literature/
 LOG/
 *.log
 results/
+
+# AppImage binaries
+software/*/xela_conf
+software/*/xela_log
+software/*/xela_server
+software/*/xela_viz
+software/*/xela_xtc
