@@ -21,7 +21,7 @@ import importlib
 from xela_server_ros.msg import SensStream, SensorFull, Taxel, Forces
 from xela_server_ros.srv import XelaSensorStream, XelaSensorStreamResponse
 
-__version__ = "1.7.6_137302"
+__version__ = "1.7.6+"
 logging.basicConfig(level=logging.INFO)
 
 
@@ -269,6 +269,12 @@ class ArgMgr(object):
             ARGM.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
             ARGM.add_argument("--roslog", help=argparse.SUPPRESS)
             ARGM.add_argument("--rosname", help=argparse.SUPPRESS)
+            ARGM.add_argument(
+                "-s",
+                "--software_version",
+                default="v1.8.0",
+                help=f"{color}Software version (default: v1.8.0)\033[0m",
+            )
 
         else:
             ARGM.add_argument(

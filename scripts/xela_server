@@ -3,39 +3,41 @@
 params=("$@")
 
 filtered_params=()
+software_version="v1.8.0"
 
 printf '%s ' "${params[@]}"
 
-# Find and remove '--ros-args' and '--params-file' from the list
-while [[ " ${params[*]} " == *" --ros-args "* || " ${params[*]} " == *" --params-file "* ]]; do
-    index=$(( ${#params[@]} - 1 ))
-    for (( i=0; i<${#params[@]}; i++ )); do
-        if [ "${params[$i]}" == "--ros-args" ]; then
-            index=$i
-            printf "\nFound '--ros-args' at index ${index}"
-            break
-        elif [ "${params[$i]}" == "--params-file" ]; then
-            index=$i
-            printf "\nFound '--params-file' at index ${index}"
-            break
-        fi
-    done
-    params=("${params[@]:0:$index}" "${params[@]:$((index+2))}")
-
-    # Check if "--ros-args" includes "__node:=xela_server" and remove it
-    if [ "${params[$index]}" == "__node:=xela_server" ]; then
-        printf "\nRemoving __node at index ${index}"
-        params=("${params[@]:0:$index}" "${params[@]:$((index+1))}")
+# Extract software_version and filter ROS arguments
+new_params=()
+skip_next=false
+for (( i=0; i<${#params[@]}; i++ )); do
+    if $skip_next; then
+        skip_next=false
+        continue
     fi
+    
+    if [[ "${params[$i]}" == "--software_version" ]]; then
+        software_version="${params[$((i+1))]}"
+        skip_next=true
+        continue
+    elif [[ "${params[$i]}" == "--ros-args" || "${params[$i]}" == "--params-file" ]]; then
+        skip_next=true
+        continue
+    elif [[ "${params[$i]}" == __node:=* || "${params[$i]}" == __log:=* ]]; then
+        continue
+    fi
+    
+    new_params+=("${params[$i]}")
 done
-printf "\n"
+
+printf "\nUsing software version: ${software_version}\n"
 
 # Build the filtered parameters
-filtered_params=("${params[@]}")
+filtered_params=("${new_params[@]}")
 
 # Print the command (for debugging purposes)
-XELA_PATH="$(rospack find xela_server_ros)/software/v1.8.0/bin/server/AppRun"
-echo "Running command: $XELA_PATH ${params[@]}"
+XELA_PATH="$(rospack find xela_server_ros)/software/${software_version}/bin/server/AppRun"
+echo "Running command: $XELA_PATH ${filtered_params[@]}"
 
 # Execute the command
 $XELA_PATH "${filtered_params[@]}"
