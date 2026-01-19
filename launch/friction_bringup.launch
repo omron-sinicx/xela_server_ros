@@ -5,7 +5,6 @@
     <!-- Arguments for Force Converter -->
     <arg name="sensor_1_calib" default="" doc="Path to calibration JSON for sensor 1" />
     <arg name="sensor_2_calib" default="" doc="Path to calibration JSON for sensor 2" />
-    <arg name="default_calib" default="" doc="Default calibration JSON path" />
 
     <!-- Arguments for Friction Calculator -->
     <arg name="sensor_ids" default="[1, 2]" doc="List of sensor IDs to process for friction calculation" />
@@ -21,7 +20,6 @@
     <include file="$(find xela_server_ros)/launch/force_converter.launch">
         <arg name="sensor_1_calib" value="$(arg sensor_1_calib)" />
         <arg name="sensor_2_calib" value="$(arg sensor_2_calib)" />
-        <arg name="default_calib" value="$(arg default_calib)" />
         <arg name="launch_prefix" value="$(find xela_server_ros)/scripts/wait_for_xserv_topic.sh" />
     </include>
 

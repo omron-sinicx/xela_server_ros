@@ -6,14 +6,12 @@
     <!-- Each sensor can have its own calibration JSON file -->
     <arg name="sensor_1_calib" default="" doc="Path to calibration JSON for sensor 1 (relative to package or absolute path)" />
     <arg name="sensor_2_calib" default="" doc="Path to calibration JSON for sensor 2 (relative to package or absolute path)" />
-    <arg name="default_calib" default="" doc="Default calibration JSON for sensors without specific calibration" />
     <arg name="launch_prefix" default="" doc="Launch prefix for the node" />
 
     <!-- Force Converter Node -->
     <node pkg="xela_server_ros" type="xela_force_converter.py" name="xela_force_converter" output="screen" launch-prefix="$(arg launch_prefix)">
         <param name="sensor_1_calib" value="$(arg sensor_1_calib)" if="$(eval sensor_1_calib != '')" />
         <param name="sensor_2_calib" value="$(arg sensor_2_calib)" if="$(eval sensor_2_calib != '')" />
-        <param name="default_calib" value="$(arg default_calib)" if="$(eval default_calib != '')" />
     </node>
 
 </launch>
