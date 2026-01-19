@@ -1,0 +1,36 @@
+<launch>
+    <!-- XELA System Bringup Launch File -->
+    <!-- Launches Server, Force Converter, and Friction Calculator -->
+
+    <!-- Arguments for Force Converter -->
+    <arg name="sensor_1_calib" default="" doc="Path to calibration JSON for sensor 1" />
+    <arg name="sensor_2_calib" default="" doc="Path to calibration JSON for sensor 2" />
+    <arg name="default_calib" default="" doc="Default calibration JSON path" />
+
+    <!-- Arguments for Friction Calculator -->
+    <arg name="sensor_ids" default="[1, 2]" doc="List of sensor IDs to process for friction calculation" />
+    <arg name="epsilon" default="0.01" doc="Threshold for normal force to avoid zero division" />
+
+    <!-- 1. Start XELA Server -->
+    <!-- Note: This launches xela_service node which communicates with the hardware/socketcan -->
+    <include file="$(find xela_server_ros)/launch/service.launch" />
+
+    <!-- 2. Start Force Converter -->
+    <!-- Subscribes to /xServTopic, publishes calibrated forces -->
+    <!-- We use a launch-prefix to wait for /xServTopic before starting the node -->
+    <include file="$(find xela_server_ros)/launch/force_converter.launch">
+        <arg name="sensor_1_calib" value="$(arg sensor_1_calib)" />
+        <arg name="sensor_2_calib" value="$(arg sensor_2_calib)" />
+        <arg name="default_calib" value="$(arg default_calib)" />
+        <arg name="launch_prefix" value="$(find xela_server_ros)/scripts/wait_for_xserv_topic.sh" />
+    </include>
+
+    <!-- 3. Start Friction Calculator -->
+    <!-- Subscribes to total_force, publishes friction coefficient -->
+    <include file="$(find xela_server_ros)/launch/friction_calculator.launch">
+        <arg name="sensor_ids" value="$(arg sensor_ids)" />
+        <arg name="epsilon" value="$(arg epsilon)" />
+        <arg name="launch_prefix" value="$(find xela_server_ros)/scripts/wait_for_xserv_topic.sh" />
+    </include>
+
+</launch>

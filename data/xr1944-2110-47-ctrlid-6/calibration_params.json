@@ -1,0 +1,60 @@
+{
+  "total": {
+    "x": {
+      "slope": 0.0006221861457993254,
+      "intercept": -323.73158374808565,
+      "slope_std": 1.5678717823403e-05,
+      "intercept_std": 8.158556996672827,
+      "unit": "N",
+      "model": "force = slope * digital + intercept",
+      "r_squared": 0.9899420324117413
+    },
+    "y": {
+      "slope": 0.0006355804231015759,
+      "intercept": -333.2483039255626,
+      "slope_std": 1.7028042988053052e-05,
+      "intercept_std": 8.929023300338933,
+      "unit": "N",
+      "model": "force = slope * digital + intercept",
+      "r_squared": 0.9886459961248399
+    },
+    "z": {
+      "slope": 0.0008107948447563552,
+      "intercept": -481.57345970527103,
+      "slope_std": 4.684673837489205e-06,
+      "intercept_std": 2.8364421974133496,
+      "unit": "N",
+      "model": "force = slope * digital + intercept",
+      "r_squared": 0.9992994297006902
+    }
+  },
+  "each": {
+    "x": {
+      "slope": 0.0006221861457993254,
+      "intercept": -20.233223984255353,
+      "slope_std": 1.5678717823403e-05,
+      "intercept_std": 0.5099098122920517,
+      "unit": "N",
+      "model": "force = slope * digital + intercept",
+      "r_squared": 0.9899420324117413
+    },
+    "y": {
+      "slope": 0.0006355804231015759,
+      "intercept": -20.828018995347662,
+      "slope_std": 1.7028042988053052e-05,
+      "intercept_std": 0.5580639562711833,
+      "unit": "N",
+      "model": "force = slope * digital + intercept",
+      "r_squared": 0.9886459961248399
+    },
+    "z": {
+      "slope": 0.0008107948447563552,
+      "intercept": -30.09834123157944,
+      "slope_std": 4.684673837489205e-06,
+      "intercept_std": 0.17727763733833435,
+      "unit": "N",
+      "model": "force = slope * digital + intercept",
+      "r_squared": 0.9992994297006902
+    }
+  }
+}

@@ -1,0 +1,15 @@
+<launch>
+    <!-- XELA Friction Calculator Launch File -->
+
+    <!-- List of sensor IDs to process (e.g. "[1, 2]") -->
+    <arg name="sensor_ids" default="[1, 2]" doc="List of sensor IDs to process" />
+    <arg name="force_topic_prefix" default="/xela_force_converter/sensor_" doc="Prefix for input force topics" />
+    <arg name="epsilon" default="0.01" doc="Threshold for normal force to avoid zero division" />
+    <arg name="launch_prefix" default="" doc="Launch prefix for the node" />
+
+    <node pkg="xela_server_ros" type="xela_friction_calculator.py" name="xela_friction_calculator" output="screen" launch-prefix="$(arg launch_prefix)">
+        <rosparam param="sensor_ids" subst_value="True">$(arg sensor_ids)</rosparam>
+        <param name="force_topic_prefix" value="$(arg force_topic_prefix)" />
+        <param name="epsilon" value="$(arg epsilon)" />
+    </node>
+</launch>

@@ -75,22 +75,39 @@ class XelaForceConverter:
                     )
 
         # Load default calibration as fallback
+        # Load default calibration as fallback (Optional)
         default_calib_file = rospy.get_param("~default_calib", None)
+
         if default_calib_file:
+            # If user specified a default file, it MUST exist
             if not os.path.isabs(default_calib_file):
                 default_calib_file = os.path.join(self.package_dir, default_calib_file)
+
+            if os.path.exists(default_calib_file):
+                self.default_calibration = self._load_calib_file(default_calib_file)
+                rospy.loginfo(f"  Default calibration: {default_calib_file}")
+            else:
+                rospy.logerr(
+                    f"Default calibration file not found: {default_calib_file}"
+                )
+                # If explicit default was requested but missing, this is an error
         else:
-            default_calib_file = os.path.join(
+            # Try to load from standard location, but don't fail if missing
+            standard_default_path = os.path.join(
                 self.package_dir, "data", "digital_to_force", "calibration_params.json"
             )
-
-        if os.path.exists(default_calib_file):
-            self.default_calibration = self._load_calib_file(default_calib_file)
-            rospy.loginfo(f"  Default calibration: {default_calib_file}")
-        else:
-            rospy.logerr(f"Default calibration file not found: {default_calib_file}")
-            rospy.signal_shutdown("Missing default calibration file")
-            return
+            if os.path.exists(standard_default_path):
+                self.default_calibration = self._load_calib_file(standard_default_path)
+                rospy.loginfo(
+                    f"  Default calibration (auto-detected): {standard_default_path}"
+                )
+            else:
+                # No default found. This is fine as long as we have sensor-specific ones.
+                # If we encounter a sensor without specific calibration later, we will error then.
+                rospy.loginfo(
+                    "  No default calibration loaded (will rely on sensor-specific configs)"
+                )
+                self.default_calibration = None
 
     def _load_calib_file(self, calib_path: str) -> dict:
         """Load calibration parameters from a JSON file."""
@@ -144,6 +161,7 @@ class XelaForceConverter:
 
     def callback(self, msg: SensStream):
         """Process incoming sensor data and publish converted forces for all sensors."""
+
         for sensor in msg.sensors:
             sensor_pos = sensor.sensor_pos
             num_taxels = len(sensor.taxels)
