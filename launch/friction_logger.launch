@@ -1,0 +1,19 @@
+<launch>
+    <!-- XELA Friction Logger Launch File -->
+    <!-- Records force and friction data from 2 sensors to CSV -->
+
+    <!-- Output directory (default: xela_server_ros/results/) -->
+    <arg name="output" default="" doc="Output directory for CSV files" />
+
+    <!-- Recording duration in seconds (default: unlimited) -->
+    <arg name="duration" default="" doc="Recording duration in seconds" />
+
+    <!-- Recording frame rate in Hz (default: 50) -->
+    <arg name="fps" default="50" doc="Recording frame rate in Hz" />
+
+    <node pkg="xela_server_ros" type="xela_friction_logger.py" name="xela_friction_logger" output="screen">
+        <param name="output" value="$(arg output)" if="$(eval output != '')" />
+        <param name="duration" value="$(arg duration)" if="$(eval duration != '')" />
+        <param name="fps" value="$(arg fps)" />
+    </node>
+</launch>

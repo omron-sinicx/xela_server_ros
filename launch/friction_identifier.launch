@@ -1,0 +1,29 @@
+<launch>
+    <!-- Friction Identifier Launch File -->
+    <!-- Launches XELA Server, Force Converter, and Friction Identifier -->
+
+    <!-- Arguments for Force Converter -->
+    <arg name="sensor_1_calib" default="" doc="Path to calibration JSON for sensor 1" />
+    <arg name="sensor_2_calib" default="" doc="Path to calibration JSON for sensor 2" />
+
+    <!-- Arguments for Friction Identifier -->
+    <arg name="sensor_ids" default="[1, 2]" doc="List of sensor IDs to process" />
+    <arg name="odr_intercept" default="0" doc="ODR intercept: 0 for origin, 'None' for free fit" />
+
+    <!-- 1. Start XELA Server -->
+    <include file="$(find xela_server_ros)/launch/service.launch" />
+
+    <!-- 2. Start Force Converter (with wait for xServTopic) -->
+    <include file="$(find xela_server_ros)/launch/force_converter.launch">
+        <arg name="sensor_1_calib" value="$(arg sensor_1_calib)" />
+        <arg name="sensor_2_calib" value="$(arg sensor_2_calib)" />
+        <arg name="launch_prefix" value="$(find xela_server_ros)/scripts/wait_for_xserv_topic.sh" />
+    </include>
+
+    <!-- 3. Start Friction Identifier (with wait for xServTopic) -->
+    <node pkg="xela_server_ros" type="friction_identifier.py" name="friction_identifier" output="screen" launch-prefix="$(find xela_server_ros)/scripts/wait_for_xserv_topic.sh">
+        <param name="sensor_ids" value="$(arg sensor_ids)" />
+        <param name="odr_intercept" value="$(arg odr_intercept)" />
+    </node>
+
+</launch>
