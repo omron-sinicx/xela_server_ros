@@ -19,7 +19,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import rospy
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Float32MultiArray
 from geometry_msgs.msg import Vector3Stamped
 
 # For keyboard input detection
@@ -80,6 +80,14 @@ class FrictionIdentifier:
             self.friction_publishers[sid] = rospy.Publisher(
                 topic, Float32, queue_size=1, latch=True
             )
+
+        # Publisher for aggregated friction coefficients (all sensors)
+        self.friction_array_pub = rospy.Publisher(
+            "/friction_identifier/friction_coefficients",
+            Float32MultiArray,
+            queue_size=1,
+            latch=True,
+        )
 
         # Recording state
         self.recording = False
@@ -554,6 +562,15 @@ class FrictionIdentifier:
                 )
                 if response in ["y", "yes"]:
                     # Publish all friction coefficients
+                    friction_values = []
+                    # Ensure order based on sensor_ids
+                    for sensor_id in self.sensor_ids:
+                        if sensor_id in regression_results:
+                            friction_values.append(regression_results[sensor_id][0])
+                        else:
+                            friction_values.append(0.0)  # Should not happen given logic above
+
+                    # Publish individual topics
                     for sensor_id, (friction_coef, _) in regression_results.items():
                         self.friction_publishers[sensor_id].publish(
                             Float32(friction_coef)
@@ -561,6 +578,11 @@ class FrictionIdentifier:
                         rospy.loginfo(
                             f"Published friction coefficient for sensor {sensor_id}: {friction_coef:.6f}"
                         )
+
+                    # Publish aggregated topic
+                    array_msg = Float32MultiArray(data=friction_values)
+                    self.friction_array_pub.publish(array_msg)
+                    rospy.loginfo(f"Published aggregated friction coefficients: {friction_values}")
 
                     rospy.loginfo("\nAll sensor friction coefficients published.")
                     rospy.loginfo("Node will continue running. Press Ctrl+C to exit.")
