@@ -585,9 +585,17 @@ class FrictionIdentifier:
                     rospy.loginfo(f"Published aggregated friction coefficients: {friction_values}")
 
                     rospy.loginfo("\nAll sensor friction coefficients published.")
-                    rospy.loginfo("Node will continue running. Press Ctrl+C to exit.")
-                    rospy.spin()
-                    return
+                    print()
+                    print("-" * 60)
+                    print("Press ENTER to restart identification, or Ctrl+C to exit...")
+                    print("-" * 60)
+                    try:
+                        input()
+                        rospy.loginfo("Restarting identification process...")
+                        break  # Break inner loop to restart outer loop
+                    except EOFError:
+                        rospy.spin()
+                        return
                 elif response in ["n", "no"]:
                     rospy.logwarn("Results not accepted. Restarting...")
                     break
