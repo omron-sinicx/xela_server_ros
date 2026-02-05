@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 
 import rospy
 from std_msgs.msg import Float32, Float32MultiArray
+from std_srvs.srv import Trigger
 from geometry_msgs.msg import Vector3Stamped
 
 # For keyboard input detection
@@ -93,9 +94,18 @@ class FrictionIdentifier:
         self.recording = False
         self.lock = threading.Lock()
 
+        # Baseline calibration settings
+        self.baseline_duration = rospy.get_param("~baseline_duration", 10.0)
+
+        # Service clients for baseline calibration
+        self.start_baseline_srv = None
+        self.clear_baseline_srv = None
+        self._setup_baseline_services()
+
         rospy.loginfo("Friction Identifier Node initialized")
         rospy.loginfo(f"  Sensor IDs: {self.sensor_ids}")
         rospy.loginfo(f"  ODR Intercept: {self.odr_intercept}")
+        rospy.loginfo(f"  Baseline duration: {self.baseline_duration} seconds")
         rospy.loginfo(f"  Results directory: {self.results_base_dir}")
 
     def force_callback(self, msg: Vector3Stamped, sensor_id: int):
@@ -115,10 +125,59 @@ class FrictionIdentifier:
             for sid in self.sensor_ids:
                 self.sensor_data[sid] = {"x": [], "y": [], "z": [], "timestamps": []}
 
-    def wait_for_key(self):
-        """Wait for Enter or Space key press."""
+    def _setup_baseline_services(self):
+        """Setup service clients for baseline calibration."""
+        start_srv_name = "/xela_force_converter/start_baseline"
+        clear_srv_name = "/xela_force_converter/clear_baseline"
+
+        rospy.loginfo("Waiting for baseline services...")
+        try:
+            rospy.wait_for_service(start_srv_name, timeout=5.0)
+            rospy.wait_for_service(clear_srv_name, timeout=5.0)
+            self.start_baseline_srv = rospy.ServiceProxy(start_srv_name, Trigger)
+            self.clear_baseline_srv = rospy.ServiceProxy(clear_srv_name, Trigger)
+            rospy.loginfo("  Baseline services connected")
+        except rospy.ROSException:
+            rospy.logwarn("  Baseline services not available - skipping baseline calibration")
+
+    def collect_baseline(self):
+        """Collect baseline data from xela_force_converter."""
+        if self.start_baseline_srv is None:
+            rospy.logwarn("Baseline service not available, skipping baseline collection")
+            return False
+
         print("\n" + "=" * 60)
-        print("Recording data... Press ENTER or SPACE to stop.")
+        print(f"Collecting baseline for {self.baseline_duration} seconds...")
+        print("Keep sensors UNLOADED (no contact with objects)")
+        print("=" * 60)
+
+        try:
+            response = self.start_baseline_srv()
+            if not response.success:
+                rospy.logwarn(f"Failed to start baseline: {response.message}")
+                return False
+
+            # Wait for baseline collection to complete
+            rospy.sleep(self.baseline_duration + 0.5)  # Add small buffer
+
+            print("Baseline collection complete!")
+            return True
+
+        except rospy.ServiceException as e:
+            rospy.logerr(f"Baseline service call failed: {e}")
+            return False
+
+    def wait_for_start(self):
+        """Wait for Enter key to start recording (blocking)."""
+        print("=" * 60)
+        print("Press [Enter] to START recording...")
+        print("=" * 60)
+        input()
+
+    def wait_for_stop(self):
+        """Wait for Enter or Space key press to stop recording."""
+        print("\n" + "=" * 60)
+        print("RECORDING... Press [Enter] to STOP.")
         print("=" * 60 + "\n")
 
         old_settings = termios.tcgetattr(sys.stdin)
@@ -458,15 +517,26 @@ class FrictionIdentifier:
         """Main run loop."""
         rospy.loginfo("\n" + "=" * 60)
         rospy.loginfo("Friction Identifier - Starting identification process")
-        rospy.loginfo("=" * 60)
 
         while not rospy.is_shutdown():
             # Clear previous data
             self.clear_data()
 
+            # Wait for user to start recording
+            self.wait_for_start()
+
+            # Collect baseline (10 seconds, unloaded state)
+            self.collect_baseline()
+
+            # Prompt user to start measurement
+            print("\n" + "=" * 60)
+            print("Baseline complete. Now GRASP the object and press [Enter] to record.")
+            print("=" * 60)
+            input()
+
             # Start recording
             self.recording = True
-            self.wait_for_key()
+            self.wait_for_stop()
             self.recording = False
 
             # Create trial directory

@@ -17,10 +17,12 @@ Usage:
 
 import os
 import json
+import threading
 import rospy
 import numpy as np
 from std_msgs.msg import Float32MultiArray, MultiArrayDimension, Header
 from geometry_msgs.msg import Vector3Stamped
+from std_srvs.srv import Trigger, TriggerResponse
 from xela_server_ros.msg import SensStream
 
 
@@ -41,6 +43,22 @@ class XelaForceConverter:
         # Dynamic publishers for each sensor (created on first message)
         self.sensor_publishers = {}
 
+        # Baseline calibration state
+        self.baseline_mode = False  # True when collecting baseline
+        self.baseline_duration = rospy.get_param("~baseline_duration", 10.0)
+        self.baseline_buffer = {}  # {sensor_id: {"x": [], "y": [], "z": []}}
+        self.baseline_values = {}  # {sensor_id: {"x": mean, "y": mean, "z": mean}}
+        self.use_baseline = False  # True after baseline is set
+        self.baseline_lock = threading.Lock()
+
+        # Services for baseline calibration
+        self.start_baseline_srv = rospy.Service(
+            "~start_baseline", Trigger, self.handle_start_baseline
+        )
+        self.clear_baseline_srv = rospy.Service(
+            "~clear_baseline", Trigger, self.handle_clear_baseline
+        )
+
         # Subscriber to xela sensor stream
         self.sub = rospy.Subscriber(
             "/xServTopic", SensStream, self.callback, queue_size=10
@@ -48,6 +66,8 @@ class XelaForceConverter:
 
         rospy.loginfo("XELA Force Converter Node initialized")
         rospy.loginfo("  Publishing topics for all detected sensors")
+        rospy.loginfo(f"  Baseline duration: {self.baseline_duration} seconds")
+        rospy.loginfo("  Services: ~start_baseline, ~clear_baseline")
 
     def load_sensor_calibrations(self):
         """Load calibration parameters for each sensor from specified JSON files."""
@@ -104,6 +124,80 @@ class XelaForceConverter:
 
         return {"slope": slope, "intercept": intercept}
 
+    def handle_start_baseline(self, req):
+        """Service handler to start baseline collection."""
+        with self.baseline_lock:
+            if self.baseline_mode:
+                return TriggerResponse(
+                    success=False, message="Baseline collection already in progress"
+                )
+
+            # Clear previous baseline data
+            self.baseline_buffer = {}
+            self.baseline_values = {}
+            self.use_baseline = False
+            self.baseline_mode = True
+
+        rospy.loginfo(
+            f"Starting baseline collection for {self.baseline_duration} seconds..."
+        )
+        rospy.loginfo("  Keep sensors unloaded (no contact with objects)")
+
+        # Schedule baseline finalization
+        rospy.Timer(
+            rospy.Duration(self.baseline_duration),
+            self._finalize_baseline,
+            oneshot=True,
+        )
+
+        return TriggerResponse(
+            success=True,
+            message=f"Baseline collection started ({self.baseline_duration}s)",
+        )
+
+    def _finalize_baseline(self, event):
+        """Finalize baseline after collection period."""
+        with self.baseline_lock:
+            self.baseline_mode = False
+
+            if not self.baseline_buffer:
+                rospy.logwarn("No baseline data collected!")
+                return
+
+            # Calculate mean baseline for each sensor
+            for sensor_id, data in self.baseline_buffer.items():
+                if len(data["x"]) == 0:
+                    continue
+
+                self.baseline_values[sensor_id] = {
+                    "x": np.mean(data["x"]),
+                    "y": np.mean(data["y"]),
+                    "z": np.mean(data["z"]),
+                }
+                rospy.loginfo(
+                    f"  Sensor {sensor_id} baseline: "
+                    f"x={self.baseline_values[sensor_id]['x']:.2f}, "
+                    f"y={self.baseline_values[sensor_id]['y']:.2f}, "
+                    f"z={self.baseline_values[sensor_id]['z']:.2f} "
+                    f"(from {len(data['x'])} samples)"
+                )
+
+            self.use_baseline = True
+            self.baseline_buffer = {}  # Clear buffer
+
+        rospy.loginfo("Baseline collection complete. Now using baseline correction.")
+
+    def handle_clear_baseline(self, req):
+        """Service handler to clear baseline and revert to intercept-based calibration."""
+        with self.baseline_lock:
+            self.baseline_mode = False
+            self.baseline_buffer = {}
+            self.baseline_values = {}
+            self.use_baseline = False
+
+        rospy.loginfo("Baseline cleared. Reverted to intercept-based calibration.")
+        return TriggerResponse(success=True, message="Baseline cleared")
+
     def get_calibration(self, sensor_pos: int) -> dict:
         """Get calibration parameters for a specific sensor position."""
         if sensor_pos in self.sensor_calibrations:
@@ -135,6 +229,21 @@ class XelaForceConverter:
             if num_taxels == 0:
                 continue
 
+            # Collect baseline data if in baseline mode
+            with self.baseline_lock:
+                if self.baseline_mode:
+                    if sensor_pos not in self.baseline_buffer:
+                        self.baseline_buffer[sensor_pos] = {"x": [], "y": [], "z": []}
+
+                    # Sum raw values across all taxels for this sensor
+                    raw_sum_x = sum(taxel.x for taxel in sensor.taxels)
+                    raw_sum_y = sum(taxel.y for taxel in sensor.taxels)
+                    raw_sum_z = sum(taxel.z for taxel in sensor.taxels)
+
+                    self.baseline_buffer[sensor_pos]["x"].append(raw_sum_x)
+                    self.baseline_buffer[sensor_pos]["y"].append(raw_sum_y)
+                    self.baseline_buffer[sensor_pos]["z"].append(raw_sum_z)
+
             # Get publishers for this sensor
             pubs = self.get_sensor_publishers(sensor_pos)
 
@@ -150,17 +259,49 @@ class XelaForceConverter:
             slope = calib["slope"]
             intercept = calib["intercept"]
 
+            # Check if we should use baseline correction
+            use_baseline_for_sensor = (
+                self.use_baseline and sensor_pos in self.baseline_values
+            )
+
             # Prepare array for forces
             forces_data = np.zeros((num_taxels, 3), dtype=np.float32)
 
-            for i, taxel in enumerate(sensor.taxels):
-                # Convert digital to force using per-taxel calibration
-                forces_data[i, 0] = slope["x"] * taxel.x + intercept["x"]
-                forces_data[i, 1] = slope["y"] * taxel.y + intercept["y"]
-                forces_data[i, 2] = slope["z"] * taxel.z + intercept["z"]
+            if use_baseline_for_sensor:
+                # Baseline mode: force = slope * (raw - baseline)
+                # Note: baseline is for total (sum), so we distribute proportionally
+                # For simplicity, apply to total force after summing raw values
+                baseline = self.baseline_values[sensor_pos]
 
-            # Calculate total force (sum over all taxels)
-            total_force = forces_data.sum(axis=0)
+                # Sum raw values
+                raw_sum_x = sum(taxel.x for taxel in sensor.taxels)
+                raw_sum_y = sum(taxel.y for taxel in sensor.taxels)
+                raw_sum_z = sum(taxel.z for taxel in sensor.taxels)
+
+                # Apply baseline correction and slope
+                total_force = np.array(
+                    [
+                        slope["x"] * (raw_sum_x - baseline["x"]),
+                        slope["y"] * (raw_sum_y - baseline["y"]),
+                        slope["z"] * (raw_sum_z - baseline["z"]),
+                    ],
+                    dtype=np.float32,
+                )
+
+                # For per-taxel forces, use standard calibration (baseline is total-level)
+                for i, taxel in enumerate(sensor.taxels):
+                    forces_data[i, 0] = slope["x"] * taxel.x + intercept["x"]
+                    forces_data[i, 1] = slope["y"] * taxel.y + intercept["y"]
+                    forces_data[i, 2] = slope["z"] * taxel.z + intercept["z"]
+            else:
+                # Standard mode: force = slope * raw + intercept
+                for i, taxel in enumerate(sensor.taxels):
+                    forces_data[i, 0] = slope["x"] * taxel.x + intercept["x"]
+                    forces_data[i, 1] = slope["y"] * taxel.y + intercept["y"]
+                    forces_data[i, 2] = slope["z"] * taxel.z + intercept["z"]
+
+                # Calculate total force (sum over all taxels)
+                total_force = forces_data.sum(axis=0)
 
             # Create and publish forces message
             forces_msg = self._create_multiarray(forces_data, "forces")
